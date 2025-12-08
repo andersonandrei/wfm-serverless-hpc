@@ -23,3 +23,5 @@ spec:
       - name: wfbench
         persistentVolumeClaim:
           claimName: wfbench
+          readOnly: false
+      serviceAccountName: knative-rbac          

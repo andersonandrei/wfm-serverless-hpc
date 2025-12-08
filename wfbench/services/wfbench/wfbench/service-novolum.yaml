@@ -9,9 +9,6 @@ spec:
       containers:
       - name: wfbench
         image: docker.io/andersonandrei/wfbench-knative:wfbench
-        volumeMounts:
-        - name: wfbench
-          mountPath: /data
         resources:  
           requests:
             cpu: 1
@@ -19,7 +16,3 @@ spec:
           limits:
             cpu: 1
             memory: 1024M               
-      volumes:
-      - name: wfbench
-        persistentVolumeClaim:
-          claimName: wfbench

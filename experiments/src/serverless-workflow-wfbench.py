@@ -52,7 +52,7 @@ def list_inputs_and_outputs(next_function_files):
             next_function_output.append(files["name"])
     return next_function_data_requirements, next_function_output
 
-def invoke_function(functions, next_function_name, invoked_functions, functions_data_locality, workflow_data_locality, workflow_id, platform):
+def invoke_function(functions, next_function_name, invoked_functions, functions_data_locality, workflow_data_locality, workflow_id, platform, function_api):
 
     # Retrieve the values for the next functions
     next_function = functions[next_function_name]
@@ -84,7 +84,7 @@ def invoke_function(functions, next_function_name, invoked_functions, functions_
 
         if (platform == 'knative'):
             workflow_id = workflow_id
-            function_api = next_parameters["api_url"]
+            #function_api = next_parameters["api_url"]
             cmd_invokation = "curl " + function_api + " -X POST -H 'Content-Type: application/json' -d '{" + parameter_list + "}'"#& " 
         
         if (platform == 'local'):
@@ -190,11 +190,11 @@ def group_nodes_by_level(levels):
 """
 Verify parents executin recursively
 """
-def verify_parent_function_execution(functions, current_function, invoked_functions, functions_data_locality, workflow_id):
+def verify_parent_function_execution(functions, current_function, invoked_functions, functions_data_locality, workflow_id, function_api):
     
     if (len(current_function.get("parents")) == 0):
         if current_function["name"] not in invoked_functions:
-            cmds_invokation, invoked_functions = invoke_function(functions, current_function["name"], invoked_functions, functions_data_locality, workflow_id)
+            cmds_invokation, invoked_functions = invoke_function(functions, current_function["name"], invoked_functions, functions_data_locality, workflow_id, function_api)
             execute_functions([cmds_invokation])
             return invoked_functions
         else:
@@ -204,10 +204,10 @@ def verify_parent_function_execution(functions, current_function, invoked_functi
         if (len(current_function.get("parents")) == 1):
             function_parent = current_function.get("parents")[0]
             if function_parent not in invoked_functions:
-                invoked_functions = verify_parent_function_execution(functions, functions.get(function_parent), invoked_functions, functions_data_locality, workflow_id)
+                invoked_functions = verify_parent_function_execution(functions, functions.get(function_parent), invoked_functions, functions_data_locality, workflow_id, function_api)
                 return invoked_functions
             else:
-                cmds_invokation, invoked_functions = invoke_function(functions, current_function["name"], invoked_functions, functions_data_locality, workflow_id)
+                cmds_invokation, invoked_functions = invoke_function(functions, current_function["name"], invoked_functions, functions_data_locality, workflow_id, function_api)
                 execute_functions([cmds_invokation])
                 return invoked_functions
                          
@@ -215,12 +215,12 @@ def verify_parent_function_execution(functions, current_function, invoked_functi
         else:
             for function_parent in current_function.get("parents"):
                 if function_parent not in invoked_functions:
-                    invoked_functions = verify_parent_function_execution(functions, functions.get(function_parent), invoked_functions, functions_data_locality, workflow_id)
-            cmds_invokation, invoked_functions = invoke_function(functions, current_function["name"], invoked_functions, functions_data_locality, workflow_id)
+                    invoked_functions = verify_parent_function_execution(functions, functions.get(function_parent), invoked_functions, functions_data_locality, workflow_id, function_api)
+            cmds_invokation, invoked_functions = invoke_function(functions, current_function["name"], invoked_functions, functions_data_locality, workflow_id, function_api)
             execute_functions([cmds_invokation])
             return invoked_functions
 
-def run_exp_dag(exp_description, workflow_id, number_of_cores, platform):
+def run_exp_dag(exp_description, workflow_id, number_of_cores, platform, workflow_manager_data_locality, workflow_data_specific_locality, function_api):
     # Initialize variables
     start_time_experiment = int(time.time() * 1000)
     function_timeout_limit = 600000 #10 minutes
@@ -236,11 +236,11 @@ def run_exp_dag(exp_description, workflow_id, number_of_cores, platform):
     # Read the parameters from the description
     workflow = documents['workflow']
     workflow_name = workflow['name']
-    workflow_data_locality = workflow['workflow_manager_data_locality']
-    functions_data_locality = workflow['workflow_data_locality']
+    workflow_data_locality = workflow_manager_data_locality #workflow['workflow_manager_data_locality']
+    functions_data_locality = workflow_data_specific_locality #workflow['workflow_data_locality']
 
-    if (platform == 'knative'):
-        deploy_function(workflow_name, workflow_name)
+    #if (platform == 'knative'):
+    #    deploy_function(workflow_name, workflow_name)
 
     """
     TODO To fix for permission (sudo and not sudo)
@@ -331,7 +331,7 @@ def run_exp_dag(exp_description, workflow_id, number_of_cores, platform):
                     expected_requirements_ready = verify_expected_data(next_function_data_requirements, workflow_data_locality, workflow_id)
                     if (expected_requirements_ready == False): #and function_name in invoked_functions):
                         os.system("sleep 1s")
-                        #invoked_functions = verify_parent_function_execution(functions, functions[next_function_name], invoked_functions, functions_data_locality, workflow_id)
+                        #invoked_functions = verify_parent_function_execution(functions, functions[next_function_name], invoked_functions, functions_data_locality, workflow_id, function_api)
                 #"""    
                 """
                     current_timeout_countdown = int(time.time() * 1000)
@@ -349,7 +349,7 @@ def run_exp_dag(exp_description, workflow_id, number_of_cores, platform):
                         file1.write("++profile/Step (timeout reached): " + str(current_timeout_countdown - start_timeout_countdown) + " milliseconds\n")
                     break
                 """
-                cmd_invokation, invoked_functions = invoke_function(functions, next_function_name, invoked_functions, functions_data_locality, workflow_data_locality, workflow_id, platform)
+                cmd_invokation, invoked_functions = invoke_function(functions, next_function_name, invoked_functions, functions_data_locality, workflow_data_locality, workflow_id, platform, function_api)
                 cmds_invokation.append(cmd_invokation)
             # If the next functions still need to be executed, let's prepare the command line for them
             print(" >>> Invoked functions ", invoked_functions)
@@ -371,15 +371,15 @@ def run_exp_dag(exp_description, workflow_id, number_of_cores, platform):
         file1.write("++profile/Elapsed time: " + str(elapsed_time) + " milliseconds\n")
         file1.write("++profile/End timestamp: " + str(end_time_experiment) + " milliseconds\n")
     """
-    if (platform == 'knative'):
-        remove_function(workflow_name, function_original_name)
+    #if (platform == 'knative'):
+    #    remove_function(workflow_name, function_original_name)
 
     return     
 
 def print_parameters():
     str = "\nPlease, use one of the following parameters: \n\
     -h                 | help \n\
-    -r <exp_file.yaml> <workflow_id> <number_of_cores> <platform> | run the experiment described in exp_file.yaml"
+    -r <exp_file.yaml> <workflow_id> <number_of_cores> <platform> <workflow_manager_data_locality> <workflow_data_locality> <main_function_api> | run the experiment described in exp_file.yaml"
    
     print(str)
     return
@@ -405,9 +405,12 @@ def main():
             if (len(argvs) < 5):
                 print_parameters()
             else:
+                """ Testing for the tutorial
                 print(" >>> Starting the thread to measure the resources")
                 measurements_execution_time_file_name = "measurement_execution_time.csv"
                 measurements_file_name = str(argvs[3])
+                
+                
                 if (argvs[5] == 'knative'):
                     command_measurement = 'ssh -l <user_name> <machine_address> "pmdumptext -d \',\' -f \'%d/%m/%y %H:%M:%S\' -t 1sec kernel.all.cpu.user mem.util.used denki.rapl.rate[\"0-package-0\"] denki.rapl.rate[\"1-package-1\"] > wfbench/' + measurements_file_name + '.csv\"' 
                 else:
@@ -416,11 +419,12 @@ def main():
                 command_thread = threading.Thread(target=thread_function, args=(command_measurement, ))
                 command_thread.start()
                 os.system("sleep 2s")
+                """
 
                 print("Creating and invoking the functions for exp: " + str(argvs[2]))
                 entire_service_start_time=int(time.time() * 1000)
                 
-                run_exp_dag(argvs[2], argvs[3], argvs[4], argvs[5])
+                run_exp_dag(argvs[2], argvs[3], argvs[4], argvs[5], argvs[6], argvs[7], argvs[8])
                 
                 entire_service_end_time=int(time.time() * 1000)
                 task_time = entire_service_end_time - entire_service_start_time
@@ -434,6 +438,7 @@ def main():
                         writer.writerow(row)
                 """
 
+                """ Testing for the tutorial
                 print(" >>> Finilizing the thread to measure the resources")
                 command_thread.join()
 
@@ -444,8 +449,9 @@ def main():
                 command_thread = threading.Thread(target=thread_function, args=(copy_measurement, ))
                 command_thread.start()
                 command_thread.join()
+                """
 
-                print(" >>> All threads finished")
+                print(" >>> Workflow execution completed")
     return
 
 main()

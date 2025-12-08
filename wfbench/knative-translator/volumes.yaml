@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: wfbench
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /home/andasilva/data #replace here or guarantee the existence of this path
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wfbench
+  namespace: knative-functions
+spec:
+  resources:
+    requests:
+      storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
