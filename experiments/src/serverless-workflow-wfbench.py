@@ -129,22 +129,22 @@ def run_thread(payload):
         "Content-Type": "application/json",
     }
 
-    try:
-        print(">>> Running here")
-        response = requests.post(
-            url,
-            headers=headers,
-            json=payload#,        # cleaner than data=json.dumps(...)
-            #timeout=30
-        )
+    #try:
+    print(">>> Running here")
+    response = requests.post(
+        url,
+        headers=headers,
+        json=payload#,        # cleaner than data=json.dumps(...)
+        #timeout=30
+    )
 
-        response.raise_for_status()
+    response.raise_for_status()
 
-        return response.json()
+    return response.json()
 
-    except requests.RequestException as e:
-        print(f"Request failed for payload {payload.get('name')}: {e}")
-        return None
+    #except requests.RequestException as e:
+    #    print(f"Request failed for payload {payload.get('name')}: {e}")
+    #    return None
 
 def execute_functions(cmds_invokation):
 
