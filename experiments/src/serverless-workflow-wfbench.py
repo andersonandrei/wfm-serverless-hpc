@@ -427,7 +427,7 @@ def run_exp_dag(exp_description, workflow_id, number_of_cores, platform, workflo
             # TODO To update it to process per call, then to ensure that all functions finished correctly
             if (len(cmds_invokation) != 0):
                 #print("cmds_invokation", cmds_invokation)
-                for cmd in cmds_invokation:
+                #for cmd in cmds_invokation:
                     #print("\n\CMD: ", cmd)
                 execute_functions(cmds_invokation)
             cmds_invokation = []
