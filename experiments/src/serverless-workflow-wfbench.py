@@ -149,6 +149,7 @@ def execute_functions(cmds_invokation):
 
     if (len(cmds_invokation) != 0): 
         cmds_invokation = [curl_to_payload(cmd) for cmd in cmds_invokation]
+        command_threads = []
         print(" >>> Final Command: ", cmds_invokation)   
         for payload in cmds_invokation:
             command_thread = threading.Thread(
