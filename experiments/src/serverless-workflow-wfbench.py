@@ -452,9 +452,11 @@ def print_parameters():
     print(str)
     return
 
+"""
 def run_thread(cmd):
     print("Run: \n", cmd)
     subprocess.getoutput(cmd)
+"""
 
 def thread_function(cmd):
     print("\n         >>>> Run: \n", cmd)
