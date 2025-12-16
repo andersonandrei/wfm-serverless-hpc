@@ -98,18 +98,83 @@ def invoke_function(functions, next_function_name, invoked_functions, functions_
     
     return cmd_invokation, invoked_functions
 
+
+def curl_to_payload(curl_cmd: str) -> dict:
+    """
+    Extracts the JSON payload from a curl command string and
+    converts it to a Python dictionary.
+    """
+
+    # Regex to capture the content after -d '...'
+    match = re.search(r"-d\s+'(.+)'$", curl_cmd)
+
+    if not match:
+        raise ValueError("No JSON payload found in curl command")
+
+    json_str = match.group(1)
+
+    return json.loads(json_str)
+
+def run_thread(payload):
+    """
+    Sends a POST request with the given payload.
+    Intended to be run inside a thread.
+    """
+
+    url = "http://kourier-internal.kourier-system.svc.cluster.local/wfbench"
+
+    headers = {
+        "Host": "wfbench.wfbench-demo.172.31.15.16.sslip.io",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,        # cleaner than data=json.dumps(...)
+            timeout=30
+        )
+
+        response.raise_for_status()
+
+        return response.json()
+
+    except requests.RequestException as e:
+        print(f"Request failed for payload {payload.get('name')}: {e}")
+        return None
+
 def execute_functions(cmds_invokation):
-    if (len(cmds_invokation) != 0):
-        print(" >>> Final Command: ", cmds_invokation)
-        command_threads = []
-        for cmd_command in cmds_invokation:
-            command_thread = threading.Thread(target=run_thread, args=(cmd_command, ))
+
+    if (len(cmds_invokation) != 0): 
+        cmds_invokation = [curl_to_payload(cmd) for cmd in cmds_invokation]
+        print(" >>> Final Command: ", cmds_invokation)   
+        for payload in cmds_invokation:
+            command_thread = threading.Thread(
+                target=run_thread,
+                args=(payload,)
+            )
             command_threads.append(command_thread)
             command_thread.start()
 
+        # Optional: wait for all threads to finish
         for command_thread in command_threads:
             command_thread.join()
+
+        """
+        if (len(cmds_invokation) != 0):
+            print(" >>> Final Command: ", cmds_invokation)
+            command_threads = []
+            for cmd_command in cmds_invokation:
+                command_thread = threading.Thread(target=run_thread, args=(cmd_command, ))
+                command_threads.append(command_thread)
+                command_thread.start()
+
+            for command_thread in command_threads:
+                command_thread.join()
+        """
     return
+
 
 """
 Create a DAG from the functions json file, and return a list of topological sorted functions.
