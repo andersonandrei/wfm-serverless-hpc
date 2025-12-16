@@ -130,11 +130,12 @@ def run_thread(payload):
     }
 
     try:
+        print(">>> Running here")
         response = requests.post(
             url,
             headers=headers,
-            json=payload,        # cleaner than data=json.dumps(...)
-            timeout=30
+            json=payload#,        # cleaner than data=json.dumps(...)
+            #timeout=30
         )
 
         response.raise_for_status()
