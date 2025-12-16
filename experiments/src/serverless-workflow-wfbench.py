@@ -335,12 +335,12 @@ def run_exp_dag(exp_description, workflow_id, number_of_cores, platform, workflo
         for function_name in functions_by_level:
             if ("-benchmark-start" in function_name or "-benchmark-finish" in function_name):
                 continue
-            print(function_name)
+            #print(function_name)
             function = functions[function_name]
             function_files = function["files"]
             function_output = []
             function_input, function_output = list_inputs_and_outputs(function_files)
-            print(function_output)
+            #print(function_output)
             expected_requirements_ready = verify_expected_data(function_output, workflow_data_locality, workflow_id)
             if expected_requirements_ready == True:
                 invoked_functions.append(function_name)
