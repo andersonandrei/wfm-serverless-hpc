@@ -13,6 +13,7 @@ import csv
 import yaml
 import networkx as nx
 from collections import deque, defaultdict
+import re
 
 
 def verify_expected_data(expected_output, workflow_data_locality, workflow_id):
