@@ -19,17 +19,17 @@ import requests
 
 def verify_expected_data(expected_output, workflow_data_locality, workflow_id):
     # To wait for the function completion. For now, I'm doing it checking if the expected outputs are written.
-    print(">>> Checking if the required outputs are already there")
+    #print(">>> Checking if the required outputs are already there")
     output_ready = False
     cmd_result = os.listdir(workflow_data_locality + '/' + workflow_id)
-    print("Listing expected outputs", expected_output, cmd_result, set(expected_output) <= set(cmd_result))
+    #print("Listing expected outputs", expected_output, cmd_result, set(expected_output) <= set(cmd_result))
     if set(expected_output) <= set(cmd_result):
         output_ready = True
-    print("All requirements ready? ", output_ready)
+    #print("All requirements ready? ", output_ready)
     return output_ready
 
 def remove_function(workflow_name, function_name):
-    print("Deleting ", workflow_name, function_name)
+    #print("Deleting ", workflow_name, function_name)
     cmd = "kubectl delete -f service.yaml" # --grace-period=0 --force"
     print(cmd)
     subprocess.run(cmd.split(" "), cwd="../services/wfbench/wfbench")
@@ -37,7 +37,7 @@ def remove_function(workflow_name, function_name):
     return
 
 def deploy_function(workflow_name, function_name):
-    print("Deploying ", workflow_name, function_name)
+    #print("Deploying ", workflow_name, function_name)
     cmd = "kubectl apply -f service.yaml"
     print(cmd)
     subprocess.run(cmd.split(" "), cwd="../services/wfbench/wfbench")
@@ -82,7 +82,7 @@ def invoke_function(functions, next_function_name, invoked_functions, functions_
                 else:
                     parameter_list += '"' + parameter + '":' + str(value) + ', '
         parameter_list += '"workdir":"' + str(pathlib.Path(functions_data_locality) / workflow_id) + '"'
-        print(" >>>> Prepared the parameters", parameter_list, parameter_list == None)
+        ##print(" >>>> Prepared the parameters", parameter_list, parameter_list == None)
 
         if (platform == 'knative'):
             workflow_id = workflow_id
@@ -94,7 +94,7 @@ def invoke_function(functions, next_function_name, invoked_functions, functions_
             function_api = "http://localhost:80/wfbench"
             cmd_invokation = "curl " + function_api + " -X POST -H 'Content-Type: application/json' -d '{" + parameter_list + "}'"#& " 
 
-        print("  >>> Command: ", cmd_invokation)
+        #print("  >>> Command: ", cmd_invokation)
 
         invoked_functions.append(next_function_name)
     
@@ -131,7 +131,7 @@ def run_thread(payload):
     }
 
     #try:
-    print(">>> Running here")
+    #print(">>> Running here")
     response = requests.post(
         url,
         headers=headers,
@@ -152,7 +152,7 @@ def execute_functions(cmds_invokation):
     if (len(cmds_invokation) != 0): 
         cmds_invokation = [curl_to_payload(cmd) for cmd in cmds_invokation]
         command_threads = []
-        print(" >>> Final Command: ", cmds_invokation)   
+        #print(" >>> Final Command: ", cmds_invokation)   
         for payload in cmds_invokation:
             command_thread = threading.Thread(
                 target=run_thread,
@@ -167,7 +167,7 @@ def execute_functions(cmds_invokation):
 
         """
         if (len(cmds_invokation) != 0):
-            print(" >>> Final Command: ", cmds_invokation)
+            #print(" >>> Final Command: ", cmds_invokation)
             command_threads = []
             for cmd_command in cmds_invokation:
                 command_thread = threading.Thread(target=run_thread, args=(cmd_command, ))
@@ -208,7 +208,7 @@ def create_dag_from_yaml(functions):
         if edge[1] not in [node for sublist in sorted_nodes_by_level for node in sublist]:
             sorted_nodes_by_level.append([edge[1]])
 
-    print("Nodes sorted by level:", sorted_nodes_by_level)
+    #print("Nodes sorted by level:", sorted_nodes_by_level)
 
     return G, sorted_nodes_by_level
 
@@ -330,7 +330,7 @@ def run_exp_dag(exp_description, workflow_id, number_of_cores, platform, workflo
     # Here I verify the output instead of the data_requirements because I want to check which function was executed(finished)
     
     #""" REMOVE THIS COMMENT AFTER TESTING LOCAL
-    print("!! Pre-verification phase\n")
+    #print("!! Pre-verification phase\n")
     for functions_by_level in functions_as_a_dag:
         for function_name in functions_by_level:
             if ("-benchmark-start" in function_name or "-benchmark-finish" in function_name):
@@ -345,9 +345,9 @@ def run_exp_dag(exp_description, workflow_id, number_of_cores, platform, workflo
             if expected_requirements_ready == True:
                 invoked_functions.append(function_name)
         
-    print(" !! Already invoked functions: ", invoked_functions)
-    print(" !! Let's trigger the next functions\n")
-    print("functions.keys(): ", functions.keys())
+    #print(" !! Already invoked functions: ", invoked_functions)
+    #print(" !! Let's trigger the next functions\n")
+    #print("functions.keys(): ", functions.keys())
     #"""
 
     # Looping though all functions to execute the workflow
@@ -355,41 +355,41 @@ def run_exp_dag(exp_description, workflow_id, number_of_cores, platform, workflo
         cmds_invokation = []
         for function_name in functions_by_level:
             
-            print("Function_name", function_name)
+            #print("Function_name", function_name)
             function = functions[function_name]
             function_original_name = function_name
             function_original_name = function_name#function['spec']['original_name']
             next_functions = function['children']
             function_files = function["files"]
-            print("Next functions:", next_functions)
+            ##print("Next functions:", next_functions)
 
             for next_function_name in next_functions:
                 next_function = functions[next_function_name]
-                print("Next function name: ", next_function_name)
-                print("Next functions:", next_functions)
+                ##print("Next function name: ", next_function_name)
+                ##print("Next functions:", next_functions)
 
                 #""" REMOVE THIS COMMENT AFTER TESTING LOCAL
                 if len(next_functions) == 1 and next_functions[0].split('-')[-1] == 'finish':
                     next_function_files = next_function["files"]
                     next_function_data_requirements, next_function_output = list_inputs_and_outputs(next_function_files)
-                    print("Next function input:", next_function_data_requirements)
+                    ##print("Next function input:", next_function_data_requirements)
 
                     verify_last_end_of_workflow =  verify_expected_data(next_function_data_requirements, workflow_data_locality, workflow_id)
                     while verify_last_end_of_workflow == False:
                         os.system("sleep 1s")
-                    print("Workflow completed")
+                    #print("Workflow completed")
                     break
                 #"""
 
                 # Verify if the funcions was executed by checking the name of the function
                 if (next_function_name in invoked_functions):
-                    print("   >>> Function already executed ", next_function_name)
+                    #print("   >>> Function already executed ", next_function_name)
                     continue
                 
                 next_function_files = next_function["files"]
                 next_function_data_requirements, next_function_outputs = list_inputs_and_outputs(next_function_files)
-                print("next_function_input", next_function_data_requirements)
-                print("next_function_output", next_function_outputs)
+                #print("next_function_input", next_function_data_requirements)
+                #print("next_function_output", next_function_outputs)
 
                 #""" REMOVE THIS COMMENT AFTER TESTING LOCAL
                 # Check if the previous functions completed, which means, to check if the data requirements for the current function is ready
@@ -406,7 +406,7 @@ def run_exp_dag(exp_description, workflow_id, number_of_cores, platform, workflo
                     current_timeout_countdown = int(time.time() * 1000)
                     if (current_timeout_countdown - start_timeout_countdown >= function_timeout_limit):
                         workflow_function_timeout = True
-                        print("Timeout between functions' execution. ")
+                        #print("Timeout between functions' execution. ")
                         break
                 """
                 """
@@ -421,14 +421,14 @@ def run_exp_dag(exp_description, workflow_id, number_of_cores, platform, workflo
                 cmd_invokation, invoked_functions = invoke_function(functions, next_function_name, invoked_functions, functions_data_locality, workflow_data_locality, workflow_id, platform, function_api)
                 cmds_invokation.append(cmd_invokation)
             # If the next functions still need to be executed, let's prepare the command line for them
-            print(" >>> Invoked functions ", invoked_functions)
-            print(" >>> CMDS invokation ", cmds_invokation)
+            #print(" >>> Invoked functions ", invoked_functions)
+            #print(" >>> CMDS invokation ", cmds_invokation)
 
             # TODO To update it to process per call, then to ensure that all functions finished correctly
             if (len(cmds_invokation) != 0):
-                print("cmds_invokation", cmds_invokation)
+                #print("cmds_invokation", cmds_invokation)
                 for cmd in cmds_invokation:
-                    print("\n\CMD: ", cmd)
+                    #print("\n\CMD: ", cmd)
                 execute_functions(cmds_invokation)
             cmds_invokation = []
                 
@@ -455,12 +455,12 @@ def print_parameters():
 
 """
 def run_thread(cmd):
-    print("Run: \n", cmd)
+    #print("Run: \n", cmd)
     subprocess.getoutput(cmd)
 """
 
 def thread_function(cmd):
-    print("\n         >>>> Run: \n", cmd)
+    #print("\n         >>>> Run: \n", cmd)
     subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 
 def main():
@@ -477,7 +477,7 @@ def main():
                 print_parameters()
             else:
                 """ Testing for the tutorial
-                print(" >>> Starting the thread to measure the resources")
+                #print(" >>> Starting the thread to measure the resources")
                 measurements_execution_time_file_name = "measurement_execution_time.csv"
                 measurements_file_name = str(argvs[3])
                 
@@ -486,7 +486,7 @@ def main():
                     command_measurement = 'ssh -l <user_name> <machine_address> "pmdumptext -d \',\' -f \'%d/%m/%y %H:%M:%S\' -t 1sec kernel.all.cpu.user mem.util.used denki.rapl.rate[\"0-package-0\"] denki.rapl.rate[\"1-package-1\"] > wfbench/' + measurements_file_name + '.csv\"' 
                 else:
                     command_measurement = "pmdumptext -d \',\' -f \'%d/%m/%y %H:%M:%S\' -t 1sec kernel.all.cpu.user mem.util.used denki.rapl.rate[\"0-package-0\"] denki.rapl.rate[\"1-package-1\"] > ../../wfbench/" + measurements_file_name + '.csv'
-                print("Command for the thread\n", command_measurement)
+                #print("Command for the thread\n", command_measurement)
                 command_thread = threading.Thread(target=thread_function, args=(command_measurement, ))
                 command_thread.start()
                 os.system("sleep 2s")
